@@ -1,0 +1,14 @@
+name: SiparisSistemi
+version: 1.0.0
+main: org.larune.siparis.OrderPlugin
+api-version: '1.20'
+author: MrHistories
+
+commands:
+  siparis:
+    description: Sipariş menüsünü açar
+    usage: /siparis
+permissions:
+  siparis.admin:
+    default: op
+    description: Sipariş admin komutlarını kullanma

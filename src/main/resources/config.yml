@@ -1,0 +1,76 @@
+gui:
+  title: "&8Sipariş Sistemi"
+  categoryTitle: "&8Kategori Seç"
+  itemListTitle: "&8{category} &7- Item Seç"
+  createTitle: "&8Sipariş Oluştur"
+  ordersTitle: "&8Aktif Siparişler"
+  myOrdersTitle: "&8Benim Siparişlerim"
+  deliverTitle: "&8Teslim Et"
+  boxTitle: "&8Teslim Kutusu"
+
+limits:
+  maxActiveOrders: 3
+  createCooldownSeconds: 30
+  minUnitPrice: 1
+  maxUnitPrice: 100000000
+
+amountSteps:
+  small: 1
+  medium: 16
+  large: 64
+
+priceSteps:
+  small: 10
+  medium: 100
+  large: 1000
+
+tax:
+  enabled: false
+  percent: 5
+
+messages:
+  prefix: "&8[&eSipariş&8] &7"
+  noPermission: "&cYetkin yok."
+  economyMissing: "&cEkonomi bulunamadı (Vault + EssentialsX Economy gerekli)."
+  created: "&aSipariş oluşturuldu. &7(ID: &f{id}&7) Toplam: &f{total}$"
+  notEnoughMoney: "&cYetersiz bakiye. Gerekli: &f{total}$"
+  cooldown: "&cSipariş açmak için &f{sec}&c saniye beklemelisin."
+  limitReached: "&cAktif sipariş limitine ulaştın. Limit: &f{limit}"
+  invalid: "&cGeçersiz işlem."
+  delivered: "&aTeslim edildi. &7Kazanç: &f{pay}$ &7Miktar: &f{amt}"
+  nothingToDeliver: "&cTeslim edebileceğin item yok."
+  cancelled: "&eSipariş iptal edildi. &7İade: &f{refund}$"
+  boxEmpty: "&cTeslim kutun boş."
+  withdrew: "&aTeslim kutusundan alındı: &f{mat} x{amt}"
+  adminReloaded: "&aConfig yeniden yüklendi."
+  adminDeleted: "&aSipariş silindi. &7ID: &f{id} &7| İade: &f{refund}$"
+
+blacklist:
+  - BEDROCK
+  - BARRIER
+  - COMMAND_BLOCK
+  - COMMAND_BLOCK_MINECART
+  - STRUCTURE_BLOCK
+  - STRUCTURE_VOID
+  - JIGSAW
+
+categories:
+  autoPopulate: true
+  MADEN:
+    displayName: "&bMaden"
+    icon: DIAMOND_PICKAXE
+  CIFTCI:
+    displayName: "&aÇiftçi"
+    icon: WHEAT
+  MOB:
+    displayName: "&cMob"
+    icon: ROTTEN_FLESH
+  DIGER:
+    displayName: "&eDiğer"
+    icon: CHEST
+
+guiTheme:
+  frame:
+    enabled: true
+    material: GRAY_STAINED_GLASS_PANE
+    name: " "

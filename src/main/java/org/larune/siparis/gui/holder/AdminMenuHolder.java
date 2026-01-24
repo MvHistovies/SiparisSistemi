@@ -18,31 +18,21 @@ public class AdminMenuHolder extends BaseHolder {
         String title = Text.color("&8Sipariş Admin");
         Inventory inv = Bukkit.createInventory(holder, 27, title);
         holder.inv = inv;
-
-        // Log
         inv.setItem(11, ItemUtil.named(Material.BOOK, "&bLog", List.of(
                 "&7Sipariş açma + teslim kayıtları",
                 "&7Tıkla: &fLog ekranı"
         )));
-
-        // Sil (iade yok)
         inv.setItem(13, ItemUtil.named(Material.BARRIER, "&cSipariş Sil (İade Yok)", List.of(
                 "&7Chat'e sipariş ID yazarsın",
                 "&7Kalan para iade edilmez"
         )));
-
-        // Sil (iade var)
         inv.setItem(15, ItemUtil.named(Material.EMERALD, "&aSipariş Sil (İade Var)", List.of(
                 "&7Chat'e sipariş ID yazarsın",
                 "&7Kalan para sipariş sahibine iade edilir"
         )));
-
-        // Reload
         inv.setItem(22, ItemUtil.named(Material.REDSTONE, "&eReload", List.of(
                 "&7Config + kategoriler yenilenir"
         )));
-
-        // Geri
         inv.setItem(26, ItemUtil.named(Material.ARROW, "&eGeri", List.of("&7Ana menü")));
 
         p.openInventory(inv);

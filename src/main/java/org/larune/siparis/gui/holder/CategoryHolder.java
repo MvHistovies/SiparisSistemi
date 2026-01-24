@@ -9,6 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import org.larune.siparis.gui.GuiManager;
 import org.larune.siparis.model.CategoryDef;
 import org.larune.siparis.util.ItemUtil;
+import org.larune.siparis.util.SoundUtil;
 import org.larune.siparis.util.Text;
 
 import java.util.List;
@@ -30,6 +31,10 @@ public class CategoryHolder implements InventoryHolder {
 
         holder.render();
         p.openInventory(holder.inv);
+
+        if (gui.getPlugin().getConfig().getBoolean("sounds.enabled", true)) {
+            SoundUtil.playMenuOpen(p);
+        }
     }
 
     private void render() {
@@ -65,7 +70,10 @@ public class CategoryHolder implements InventoryHolder {
         int slot = e.getRawSlot();
         if (slot < 0 || slot >= inv.getSize()) return;
 
+        boolean sounds = gui.getPlugin().getConfig().getBoolean("sounds.enabled", true);
+
         if (slot == 18) {
+            if (sounds) SoundUtil.playClick(p);
             gui.openMainMenu(p);
             return;
         }
@@ -82,6 +90,7 @@ public class CategoryHolder implements InventoryHolder {
         List<CategoryDef> cats = gui.getCategories();
         if (idx >= cats.size()) return;
 
+        if (sounds) SoundUtil.playClick(p);
         gui.openCategoryItems(p, cats.get(idx), 0);
     }
 

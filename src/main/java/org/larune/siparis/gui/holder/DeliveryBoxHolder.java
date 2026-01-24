@@ -9,6 +9,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.larune.siparis.gui.GuiManager;
 import org.larune.siparis.util.ItemUtil;
+import org.larune.siparis.util.SoundUtil;
 import org.larune.siparis.util.Text;
 
 import java.util.*;
@@ -30,6 +31,10 @@ public class DeliveryBoxHolder implements InventoryHolder {
         holder.inv = gui.getPlugin().getServer().createInventory(holder, 54, title);
         holder.render(p);
         p.openInventory(holder.inv);
+
+        if (gui.getPlugin().getConfig().getBoolean("sounds.enabled", true)) {
+            SoundUtil.playMenuOpen(p);
+        }
     }
 
     private void render(Player p) {
@@ -85,9 +90,23 @@ public class DeliveryBoxHolder implements InventoryHolder {
         int slot = e.getRawSlot();
         if (slot < 0 || slot >= inv.getSize()) return;
 
-        if (slot == 45) { gui.openMainMenu(p); return; }
-        if (slot == 52) { open(gui, p, Math.max(0, page - 1)); return; }
-        if (slot == 53) { open(gui, p, page + 1); return; }
+        boolean sounds = gui.getPlugin().getConfig().getBoolean("sounds.enabled", true);
+
+        if (slot == 45) {
+            if (sounds) SoundUtil.playClick(p);
+            gui.openMainMenu(p);
+            return;
+        }
+        if (slot == 52) {
+            if (sounds) SoundUtil.playPageTurn(p);
+            open(gui, p, Math.max(0, page - 1));
+            return;
+        }
+        if (slot == 53) {
+            if (sounds) SoundUtil.playPageTurn(p);
+            open(gui, p, page + 1);
+            return;
+        }
 
         if (!isGridSlot(slot)) return;
 
@@ -106,10 +125,13 @@ public class DeliveryBoxHolder implements InventoryHolder {
         int taken = gui.orders().withdrawFromBox(p.getUniqueId(), mat, want);
         if (taken <= 0) {
             p.sendMessage(Text.msg("messages.boxEmpty"));
+            if (sounds) SoundUtil.playError(p);
             return;
         }
 
         ItemUtil.giveOrDrop(p, new ItemStack(mat, taken));
+
+        if (sounds) SoundUtil.playBoxWithdraw(p);
 
         p.sendMessage(Text.msg("messages.withdrew")
                 .replace("{mat}", mat.name())

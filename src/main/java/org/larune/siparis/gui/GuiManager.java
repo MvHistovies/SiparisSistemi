@@ -18,8 +18,6 @@ public class GuiManager {
     private final OrderService orders;
 
     private List<CategoryDef> cachedCategories = new ArrayList<>();
-
-    // Chat araması için bekleme
     private final Map<UUID, SearchContext> waitingSearch = new HashMap<>();
 
     public GuiManager(OrderPlugin plugin, OrderService orders) {
@@ -35,10 +33,6 @@ public class GuiManager {
     public OrderService orders() {
         return orders;
     }
-
-    // =========================
-    // MENÜLER
-    // =========================
 
     public void openMainMenu(Player p) {
         try {
@@ -87,28 +81,17 @@ public class GuiManager {
             p.sendMessage(Text.color("&cLog menüsü bulunamadı (LogsHolder yok)."));
         }
     }
-
-    /**
-     * LogsHolder compile hatası buradan geliyordu.
-     * LogsHolder tıklayınca detay ekranı açmak için bu method şart.
-     */
     public void openLogDetail(Player p, int orderId, int backPage) {
         try {
             OrderLogDetailHolder.open(this, p, orderId, backPage);
         } catch (Throwable t) {
-            // Eğer detay holder'ı daha yazmadıysan bile compile kırılmasın
+
             p.sendMessage(Text.color("&cLog detay menüsü bulunamadı (OrderLogDetailHolder yok)."));
         }
     }
-
-    // AdminMenuHolder çağırıyorsa derleme hatası olmasın
     public void beginAdminCancel(Player p, boolean myOnly) {
         openOrders(p, myOnly, 0);
     }
-
-    // =========================
-    // ARAMA AKIŞI
-    // =========================
 
     public void beginSearch(Player p, CategoryDef category, int backPage) {
         try {
@@ -156,10 +139,6 @@ public class GuiManager {
         }
     }
 
-    // =========================
-    // KATEGORİLER
-    // =========================
-
     public List<CategoryDef> getCategories() {
         return cachedCategories;
     }
@@ -197,7 +176,7 @@ public class GuiManager {
                         .distinct()
                         .toList();
             } else {
-                // craftable değil, TÜM itemler
+
                 mats = auto ? autoMap.getOrDefault(key.toUpperCase(Locale.ROOT), List.of()) : List.of();
             }
 

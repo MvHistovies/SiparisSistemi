@@ -9,8 +9,6 @@ import java.util.*;
 public final class CategoryAutoPopulator {
 
     private CategoryAutoPopulator() {}
-
-    /** Minecraft'taki tüm item/blok materyalleri (AIR hariç, item olanlar). */
     public static Set<Material> collectAllItems() {
         Set<Material> all = EnumSet.noneOf(Material.class);
         for (Material m : Material.values()) {
@@ -20,8 +18,6 @@ public final class CategoryAutoPopulator {
         }
         return all;
     }
-
-    /** İstersen kullanırsın: craft edilebilir sonuçlar */
     public static Set<Material> collectCraftables() {
         Set<Material> craftables = EnumSet.noneOf(Material.class);
         Iterator<Recipe> it = Bukkit.recipeIterator();

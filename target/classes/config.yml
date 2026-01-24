@@ -1,10 +1,10 @@
 gui:
-  title: "&8Sipariş Sistemi"
-  categoryTitle: "&8Kategori Seç"
-  itemListTitle: "&8{category} &7- Item Seç"
-  createTitle: "&8Sipariş Oluştur"
-  ordersTitle: "&8Aktif Siparişler"
-  myOrdersTitle: "&8Benim Siparişlerim"
+  title: "&8Siparis Sistemi"
+  categoryTitle: "&8Kategori Sec"
+  itemListTitle: "&8{category} &7- Item Sec"
+  createTitle: "&8Siparis Olustur"
+  ordersTitle: "&8Aktif Siparisler"
+  myOrdersTitle: "&8Benim Siparislerim"
   deliverTitle: "&8Teslim Et"
   boxTitle: "&8Teslim Kutusu"
 
@@ -24,26 +24,47 @@ priceSteps:
   medium: 100
   large: 1000
 
+expiry:
+  enabled: true
+  hours: 24
+  warnBeforeMinutes: 30
+  checkIntervalSeconds: 60
+
 tax:
   enabled: false
   percent: 5
 
+sounds:
+  enabled: true
+
+notifications:
+  delivery: true
+
+npc:
+  enabled: true
+  updateIntervalSeconds: 10  # Hologram güncelleme sıklığı
+
+
 messages:
-  prefix: "&8[&eSipariş&8] &7"
+  prefix: "&8[&eSiparis&8] &7"
   noPermission: "&cYetkin yok."
-  economyMissing: "&cEkonomi bulunamadı (Vault + EssentialsX Economy gerekli)."
-  created: "&aSipariş oluşturuldu. &7(ID: &f{id}&7) Toplam: &f{total}$"
+  economyMissing: "&cEkonomi bulunamadi."
+  created: "&aSiparis olusturuldu. &7(ID: &f{id}&7) Toplam: &f{total}$"
   notEnoughMoney: "&cYetersiz bakiye. Gerekli: &f{total}$"
-  cooldown: "&cSipariş açmak için &f{sec}&c saniye beklemelisin."
-  limitReached: "&cAktif sipariş limitine ulaştın. Limit: &f{limit}"
-  invalid: "&cGeçersiz işlem."
-  delivered: "&aTeslim edildi. &7Kazanç: &f{pay}$ &7Miktar: &f{amt}"
-  nothingToDeliver: "&cTeslim edebileceğin item yok."
-  cancelled: "&eSipariş iptal edildi. &7İade: &f{refund}$"
-  boxEmpty: "&cTeslim kutun boş."
-  withdrew: "&aTeslim kutusundan alındı: &f{mat} x{amt}"
-  adminReloaded: "&aConfig yeniden yüklendi."
-  adminDeleted: "&aSipariş silindi. &7ID: &f{id} &7| İade: &f{refund}$"
+  cooldown: "&cSiparis acmak icin &f{sec}&c saniye beklemelisin."
+  limitReached: "&cAktif siparis limitine ulastin. Limit: &f{limit}"
+  invalid: "&cGecersiz islem."
+  delivered: "&aTeslim edildi. &7Kazanc: &f{pay}$ &7Miktar: &f{amt}"
+  nothingToDeliver: "&cTeslim edebilecegin item yok."
+  cancelled: "&eSiparis iptal edildi. &7Iade: &f{refund}$"
+  boxEmpty: "&cTeslim kutun bos."
+  withdrew: "&aTeslim kutusundan alindi: &f{mat} x{amt}"
+  adminReloaded: "&aConfig yeniden yuklendi."
+  adminDeleted: "&aSiparis silindi. &7ID: &f{id} &7| Iade: &f{refund}$"
+  deliveryNotification: "&a{player} &7siparisine &f{amount}x {item} &7teslim etti! &8(#&f{id}&8)"
+  orderExpired: "&cSiparis #{id} suresi doldu! &7Iade: &f{refund}$"
+  orderExpiryWarning: "&eSiparis #{id} &f{minutes} &edakika icinde sona erecek!"
+  orderExpiredCantDeliver: "&cBu siparisin suresi dolmus."
 
 blacklist:
   - BEDROCK
@@ -60,13 +81,13 @@ categories:
     displayName: "&bMaden"
     icon: DIAMOND_PICKAXE
   CIFTCI:
-    displayName: "&aÇiftçi"
+    displayName: "&aCiftci"
     icon: WHEAT
   MOB:
     displayName: "&cMob"
     icon: ROTTEN_FLESH
   DIGER:
-    displayName: "&eDiğer"
+    displayName: "&eDiger"
     icon: CHEST
 
 guiTheme:

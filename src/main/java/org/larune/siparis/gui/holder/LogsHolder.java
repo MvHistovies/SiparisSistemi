@@ -87,13 +87,9 @@ public class LogsHolder implements InventoryHolder {
                 head.setItemMeta(meta);
             }
 
-            // OrderId'yi GUI'de slot üzerinden taşıyacağız (basit)
-            // Detay ekranına geçerken, tıklanan slot -> o slotun summary'si
             inv.setItem(slots[idx++], head);
         }
 
-        // Slot -> orderId eşlemesini basit tutmak için: inv item lore içindeki (#id) üzerinden çekebiliriz.
-        // Daha sağlam istersen PDC ile order_id de ekleriz.
     }
 
     public void handle(GuiManager gui, Player p, InventoryClickEvent e) {
@@ -105,14 +101,10 @@ public class LogsHolder implements InventoryHolder {
         if (slot == 45) { gui.openAdmin(p); return; }
         if (slot == 52) { open(gui, p, Math.max(0, page - 1)); return; }
         if (slot == 53) { open(gui, p, page + 1); return; }
-
-        // Grid tıklama -> Detay
         if (!isGridSlot(slot)) return;
 
         ItemStack clicked = e.getCurrentItem();
         if (clicked == null || clicked.getType() != Material.PLAYER_HEAD) return;
-
-        // DisplayName'den (#id) çekiyoruz: "... (#123)"
         String name = clicked.getItemMeta() != null ? clicked.getItemMeta().getDisplayName() : null;
         int orderId = parseOrderIdFromName(name);
         if (orderId <= 0) return;

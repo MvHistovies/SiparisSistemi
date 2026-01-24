@@ -28,8 +28,6 @@ public class SearchInputHolder extends BaseHolder {
         String title = Text.color("&8Arama: " + Text.color(category.getDisplayName()));
         Inventory inv = Bukkit.createInventory(this, 27, title);
         this.inv = inv;
-
-        // çerçeve
         fillFrame(gui);
 
         inv.setItem(11, ItemUtil.named(Material.NAME_TAG, "&aArama yaz",
@@ -66,7 +64,7 @@ public class SearchInputHolder extends BaseHolder {
         }
 
         if (slot == 11) {
-            // chatten arama beklemeye al
+
             gui.setWaitingSearch(p.getUniqueId(), category, backPage);
 
             p.closeInventory();

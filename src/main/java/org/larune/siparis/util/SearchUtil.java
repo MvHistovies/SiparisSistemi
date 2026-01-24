@@ -7,11 +7,9 @@ import java.util.*;
 public final class SearchUtil {
 
     private SearchUtil() {}
-
-    // Türkçe -> Material anahtar kelimeleri (ihtiyacına göre büyüt)
     private static final Map<String, List<String>> TR_ALIASES = new HashMap<>();
     static {
-        // temel
+
         put("sandık", "CHEST", "TRAPPED_CHEST", "BARREL", "ENDER_CHEST", "SHULKER_BOX");
         put("kutu", "CHEST", "BARREL", "SHULKER_BOX");
         put("kum", "SAND", "RED_SAND", "SANDSTONE");
@@ -30,14 +28,10 @@ public final class SearchUtil {
         put("kürek", "SHOVEL");
         put("balta", "AXE");
         put("çapa", "HOE");
-
-        // mob / drop
         put("kemik", "BONE", "BONE_MEAL");
         put("ip", "STRING");
         put("barut", "GUNPOWDER");
         put("ender", "ENDER_PEARL", "ENDER_EYE", "ENDER_CHEST");
-
-        // blok
         put("taş", "STONE", "COBBLESTONE");
         put("kırık taş", "COBBLESTONE");
         put("toprak", "DIRT", "GRASS_BLOCK");
@@ -47,13 +41,9 @@ public final class SearchUtil {
     private static void put(String tr, String... tokens) {
         TR_ALIASES.put(norm(tr), Arrays.asList(tokens));
     }
-
-    /** Kullanıcı yazısını normalize eder (Türkçe karakterler dahil) */
     public static String norm(String s) {
         if (s == null) return "";
         s = s.trim().toLowerCase(Locale.ROOT);
-
-        // Türkçe karakterleri sadeleştir (isteğe göre)
         s = s.replace('ı', 'i')
                 .replace('İ', 'i')
                 .replace('ş', 's')
@@ -66,35 +56,25 @@ public final class SearchUtil {
                 .replace('Ö', 'o')
                 .replace('ç', 'c')
                 .replace('Ç', 'c');
-
-        // birden çok boşluk
         s = s.replaceAll("\\s+", " ");
         return s;
     }
-
-    /** Material adı üzerinde arama (EN) + Türkçe alias */
     public static boolean matches(Material m, String queryRaw) {
         if (m == null || m.isAir()) return false;
 
         String q = norm(queryRaw);
         if (q.isEmpty()) return false;
-
-        // Material ismi
-        String name = m.name().toLowerCase(Locale.ROOT); // CHEST
+        String name = m.name().toLowerCase(Locale.ROOT);
         if (name.contains(q)) return true;
-
-        // Türkçe alias -> token listesi
         List<String> tokens = TR_ALIASES.get(q);
         if (tokens != null) {
             for (String t : tokens) {
                 String tt = t.toUpperCase(Locale.ROOT);
-                // "PLANKS" gibi genel tokenlar: içinde geçsin
+
                 if (m.name().contains(tt)) return true;
             }
         }
 
-        // birden fazla kelime araması: "kirmik tas" vs.
-        // kelimelerin bir kısmı material isminde geçiyor mu?
         String[] parts = q.split(" ");
         if (parts.length >= 2) {
             int hit = 0;
@@ -102,7 +82,7 @@ public final class SearchUtil {
                 if (part.length() < 2) continue;
                 if (name.contains(part)) hit++;
             }
-            return hit >= 2; // en az 2 parça tutarsa kabul
+            return hit >= 2;
         }
 
         return false;

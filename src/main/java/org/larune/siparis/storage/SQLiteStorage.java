@@ -27,7 +27,6 @@ public class SQLiteStorage {
             conn = DriverManager.getConnection("jdbc:sqlite:" + dbFile.getAbsolutePath());
 
             try (Statement st = conn.createStatement()) {
-
                 st.executeUpdate("""
                     CREATE TABLE IF NOT EXISTS orders (
                       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,6 +36,7 @@ public class SQLiteStorage {
                       remaining_amount INTEGER NOT NULL,
                       unit_price INTEGER NOT NULL,
                       created_at INTEGER NOT NULL,
+                      expires_at INTEGER NOT NULL DEFAULT 0,
                       status TEXT NOT NULL
                     );
                 """);
@@ -50,11 +50,10 @@ public class SQLiteStorage {
                     );
                 """);
 
-                // LOG TABLOSU
                 st.executeUpdate("""
                     CREATE TABLE IF NOT EXISTS order_logs (
                       id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      type TEXT NOT NULL,                 -- CREATE / DELIVER / CANCEL / ADMIN_DELETE vs
+                      type TEXT NOT NULL,
                       order_id INTEGER NOT NULL,
                       owner_uuid TEXT NOT NULL,
                       owner_name TEXT NOT NULL,
@@ -70,6 +69,10 @@ public class SQLiteStorage {
 
                 st.executeUpdate("CREATE INDEX IF NOT EXISTS idx_order_logs_order_id ON order_logs(order_id);");
                 st.executeUpdate("CREATE INDEX IF NOT EXISTS idx_order_logs_created_at ON order_logs(created_at DESC);");
+                st.executeUpdate("CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);");
+                st.executeUpdate("CREATE INDEX IF NOT EXISTS idx_orders_expires ON orders(expires_at);");
+
+                migrateExpiresColumn(st);
             }
 
         } catch (Exception e) {
@@ -78,16 +81,33 @@ public class SQLiteStorage {
         }
     }
 
+    private void migrateExpiresColumn(Statement st) {
+        try {
+            ResultSet rs = st.executeQuery("PRAGMA table_info(orders)");
+            boolean hasExpires = false;
+            while (rs.next()) {
+                if ("expires_at".equals(rs.getString("name"))) {
+                    hasExpires = true;
+                    break;
+                }
+            }
+            rs.close();
+            if (!hasExpires) {
+                st.executeUpdate("ALTER TABLE orders ADD COLUMN expires_at INTEGER NOT NULL DEFAULT 0");
+            }
+        } catch (SQLException ignored) {}
+    }
+
     public void close() {
         try { if (conn != null) conn.close(); } catch (Exception ignored) {}
     }
 
-    // =========================
-    // ORDERS
-    // =========================
+    public synchronized Connection getConnection() {
+        return conn;
+    }
 
-    public int insertOrder(UUID owner, Material mat, int totalAmount, long unitPrice) {
-        String sql = "INSERT INTO orders(owner, material, total_amount, remaining_amount, unit_price, created_at, status) VALUES(?,?,?,?,?,?,?)";
+    public int insertOrder(UUID owner, Material mat, int totalAmount, long unitPrice, long expiresAt) {
+        String sql = "INSERT INTO orders(owner, material, total_amount, remaining_amount, unit_price, created_at, expires_at, status) VALUES(?,?,?,?,?,?,?,?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, owner.toString());
             ps.setString(2, mat.name());
@@ -95,7 +115,8 @@ public class SQLiteStorage {
             ps.setInt(4, totalAmount);
             ps.setLong(5, unitPrice);
             ps.setLong(6, System.currentTimeMillis());
-            ps.setString(7, "ACTIVE");
+            ps.setLong(7, expiresAt);
+            ps.setString(8, "ACTIVE");
             ps.executeUpdate();
 
             try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -105,6 +126,10 @@ public class SQLiteStorage {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public int insertOrder(UUID owner, Material mat, int totalAmount, long unitPrice) {
+        return insertOrder(owner, mat, totalAmount, unitPrice, 0L);
     }
 
     public void updateOrderRemainingAndStatus(int orderId, int remaining, String status) {
@@ -132,8 +157,43 @@ public class SQLiteStorage {
         }
     }
 
+    public int countActiveOrders() {
+        String sql = "SELECT COUNT(*) FROM orders WHERE status='ACTIVE'";
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+            return 0;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public List<Order> listActiveOrders(int limit, int offset) {
         String sql = "SELECT * FROM orders WHERE status='ACTIVE' ORDER BY id DESC LIMIT ? OFFSET ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, limit);
+            ps.setInt(2, offset);
+            try (ResultSet rs = ps.executeQuery()) {
+                List<Order> out = new ArrayList<>();
+                while (rs.next()) out.add(mapOrder(rs));
+                return out;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<Order> listActiveOrdersSorted(int limit, int offset, String sortBy, boolean ascending) {
+        String orderCol = switch (sortBy.toLowerCase()) {
+            case "price" -> "unit_price";
+            case "amount" -> "remaining_amount";
+            case "time", "expires" -> "expires_at";
+            default -> "id";
+        };
+        String dir = ascending ? "ASC" : "DESC";
+        String sql = "SELECT * FROM orders WHERE status='ACTIVE' ORDER BY " + orderCol + " " + dir + " LIMIT ? OFFSET ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, limit);
             ps.setInt(2, offset);
@@ -176,7 +236,20 @@ public class SQLiteStorage {
         }
     }
 
-    /** ADMIN: siparişi DB'den siler */
+    public List<Order> listExpiredOrders() {
+        String sql = "SELECT * FROM orders WHERE status='ACTIVE' AND expires_at > 0 AND expires_at < ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, System.currentTimeMillis());
+            try (ResultSet rs = ps.executeQuery()) {
+                List<Order> out = new ArrayList<>();
+                while (rs.next()) out.add(mapOrder(rs));
+                return out;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public boolean deleteOrder(int id) {
         String sql = "DELETE FROM orders WHERE id=?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -196,13 +269,10 @@ public class SQLiteStorage {
         int remaining = rs.getInt("remaining_amount");
         long unit = rs.getLong("unit_price");
         long created = rs.getLong("created_at");
+        long expires = rs.getLong("expires_at");
         String status = rs.getString("status");
-        return new Order(id, owner, mat, total, remaining, unit, created, status);
+        return new Order(id, owner, mat, total, remaining, unit, created, expires, status);
     }
-
-    // =========================
-    // DELIVERY BOX
-    // =========================
 
     public Map<Material, Integer> getDeliveryBox(UUID owner) {
         String sql = "SELECT material, amount FROM delivery_box WHERE owner=?";
@@ -278,10 +348,6 @@ public class SQLiteStorage {
         }
     }
 
-    // =========================
-    // LOG INSERT
-    // =========================
-
     public void insertLog(String type, int orderId,
                           UUID ownerUuid, String ownerName,
                           UUID actorUuid, String actorName,
@@ -310,10 +376,6 @@ public class SQLiteStorage {
         }
     }
 
-    // =========================
-    // LOG LIST (RAW)
-    // =========================
-
     public List<LogEntry> listLogs(int limit, int offset) {
         String sql = "SELECT * FROM order_logs ORDER BY created_at DESC LIMIT ? OFFSET ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -333,26 +395,17 @@ public class SQLiteStorage {
         int id = rs.getInt("id");
         String type = rs.getString("type");
         int orderId = rs.getInt("order_id");
-
         UUID ownerUuid = UUID.fromString(rs.getString("owner_uuid"));
         String ownerName = rs.getString("owner_name");
-
         UUID actorUuid = UUID.fromString(rs.getString("actor_uuid"));
         String actorName = rs.getString("actor_name");
-
         Material mat = Material.valueOf(rs.getString("material"));
-
         int amount = rs.getInt("amount");
         long unitPrice = rs.getLong("unit_price");
         long pay = rs.getLong("pay");
         long createdAt = rs.getLong("created_at");
-
         return new LogEntry(id, type, orderId, ownerUuid, ownerName, actorUuid, actorName, mat, amount, unitPrice, pay, createdAt);
     }
-
-    // =========================
-    // LOGS - ÖZET (SİPARİŞ BAŞINA 1 SATIR)
-    // =========================
 
     public List<OrderLogSummary> listLogSummaries(int limit, int offset) {
         String sql = """
@@ -360,14 +413,11 @@ public class SQLiteStorage {
               order_id,
               MAX(created_at) AS last_at,
               MAX(CASE WHEN type='CREATE' THEN created_at END) AS created_at,
-
               MAX(owner_uuid) AS owner_uuid,
               MAX(owner_name) AS owner_name,
               MAX(material) AS material,
-
               MAX(CASE WHEN type='CREATE' THEN amount END) AS total_amount,
               MAX(CASE WHEN type='CREATE' THEN unit_price END) AS unit_price,
-
               COALESCE(SUM(CASE WHEN type='DELIVER' THEN amount ELSE 0 END), 0) AS delivered_amount,
               COALESCE(SUM(CASE WHEN type='DELIVER' THEN pay ELSE 0 END), 0) AS delivered_pay
             FROM order_logs
@@ -386,18 +436,13 @@ public class SQLiteStorage {
                     int orderId = rs.getInt("order_id");
                     long lastAt = rs.getLong("last_at");
                     long createdAt = rs.getLong("created_at");
-
                     UUID ownerUuid = UUID.fromString(rs.getString("owner_uuid"));
                     String ownerName = rs.getString("owner_name");
-
                     Material mat = Material.valueOf(rs.getString("material"));
-
                     int totalAmount = rs.getInt("total_amount");
                     long unitPrice = rs.getLong("unit_price");
-
                     int deliveredAmount = rs.getInt("delivered_amount");
                     long deliveredPay = rs.getLong("delivered_pay");
-
                     out.add(new OrderLogSummary(orderId, ownerUuid, ownerName, mat,
                             totalAmount, unitPrice,
                             deliveredAmount, deliveredPay,
@@ -409,10 +454,6 @@ public class SQLiteStorage {
             throw new RuntimeException(e);
         }
     }
-
-    // =========================
-    // LOGS - TESLİM BREAKDOWN (KİM NE KADAR)
-    // =========================
 
     public List<OrderDeliveryStat> listDeliveriesForOrder(int orderId) {
         String sql = """

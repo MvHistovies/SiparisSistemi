@@ -9,6 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import org.larune.siparis.gui.GuiManager;
 import org.larune.siparis.model.CategoryDef;
 import org.larune.siparis.util.ItemUtil;
+import org.larune.siparis.util.SoundUtil;
 import org.larune.siparis.util.Text;
 
 import java.util.ArrayList;
@@ -37,22 +38,23 @@ public class CategoryItemsHolder implements InventoryHolder {
         holder.inv = gui.getPlugin().getServer().createInventory(holder, 54, Text.color(title));
         holder.render();
         p.openInventory(holder.inv);
+
+        if (gui.getPlugin().getConfig().getBoolean("sounds.enabled", true)) {
+            SoundUtil.playMenuOpen(p);
+        }
     }
 
     private void render() {
         inv.clear();
         fillFrame();
 
-        // Geri
         inv.setItem(45, ItemUtil.named(Material.ARROW, "&eGeri", ItemUtil.lore("&7Kategori menüsü")));
 
-        // Arama
         inv.setItem(47, ItemUtil.named(Material.COMPASS, "&bArama", ItemUtil.lore(
                 "&7Türkçe/İngilizce arayabilirsin",
                 "&7Örn: &fsandık&7, &ffırın&7, &felmas&7, &fchest"
         )));
 
-        // Liste
         List<Material> mats = new ArrayList<>(category.getMaterials());
         mats.sort(Comparator.comparing(Enum::name));
 
@@ -63,7 +65,6 @@ public class CategoryItemsHolder implements InventoryHolder {
         int start = safePage * perPage;
         int end = Math.min(mats.size(), start + perPage);
 
-        // Bilgi
         inv.setItem(49, ItemUtil.named(Material.PAPER, "&bBilgi", ItemUtil.lore(
                 "&7Kategori: " + Text.color(category.getDisplayName()),
                 "&7Sayfa: &f" + (safePage + 1) + "&7/&f" + (maxPage + 1),
@@ -99,19 +100,25 @@ public class CategoryItemsHolder implements InventoryHolder {
         int slot = e.getRawSlot();
         if (slot < 0 || slot >= inv.getSize()) return;
 
-        if (slot == 45) { // geri
+        boolean sounds = gui.getPlugin().getConfig().getBoolean("sounds.enabled", true);
+
+        if (slot == 45) {
+            if (sounds) SoundUtil.playClick(p);
             gui.openCategories(p);
             return;
         }
-        if (slot == 47) { // arama
+        if (slot == 47) {
+            if (sounds) SoundUtil.playClick(p);
             gui.beginSearch(p, category, page);
             return;
         }
-        if (slot == 52) { // önceki
+        if (slot == 52) {
+            if (sounds) SoundUtil.playPageTurn(p);
             gui.openCategoryItems(p, category, Math.max(0, page - 1));
             return;
         }
-        if (slot == 53) { // sonraki
+        if (slot == 53) {
+            if (sounds) SoundUtil.playPageTurn(p);
             gui.openCategoryItems(p, category, page + 1);
             return;
         }
@@ -122,6 +129,7 @@ public class CategoryItemsHolder implements InventoryHolder {
         if (clicked == null || clicked.getType().isAir()) return;
 
         Material mat = clicked.getType();
+        if (sounds) SoundUtil.playClick(p);
         gui.openCreateOrder(p, category, mat);
     }
 
@@ -134,7 +142,7 @@ public class CategoryItemsHolder implements InventoryHolder {
         List<Integer> s = new ArrayList<>();
         for (int row = 1; row <= 4; row++) {
             for (int col = 1; col <= 7; col++) {
-                s.add(row * 9 + col); // 10..16, 19..25, 28..34, 37..43
+                s.add(row * 9 + col);
             }
         }
         return s.stream().mapToInt(i -> i).toArray();

@@ -39,8 +39,6 @@ public class OrderLogDetailHolder implements InventoryHolder {
 
     private void render() {
         inv.clear();
-
-        // Üst bilgi
         inv.setItem(45, ItemUtil.named(Material.ARROW, "&eGeri", ItemUtil.lore("&7Log listesi")));
         inv.setItem(49, ItemUtil.named(Material.PAPER, "&bDetay", ItemUtil.lore(
                 "&7Bu siparişte kim ne kadar teslim etti?",

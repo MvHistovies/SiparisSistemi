@@ -23,16 +23,10 @@ public class SearchChatListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onChat(AsyncPlayerChatEvent e) {
         Player p = e.getPlayer();
-
-        // Arama beklemiyorsa hiç karışma
         if (!gui.isWaitingSearch(p.getUniqueId())) return;
-
-        // Bu mesaj arama içindir, normal chate gitmesin
         e.setCancelled(true);
 
         String msg = e.getMessage() == null ? "" : e.getMessage().trim();
-
-        // GUI işlemleri ana thread’de açılmalı
         Bukkit.getScheduler().runTask(plugin, () -> {
             if (msg.equalsIgnoreCase("iptal")) {
                 gui.finishSearchFromChat(p, "");

@@ -39,16 +39,12 @@ public class SearchResultsHolder extends BaseHolder {
         this.inv = inv;
 
         fillFrame(gui);
-
-        // Geri / Bilgi
         inv.setItem(45, ItemUtil.named(Material.ARROW, "&eGeri", ItemUtil.lore("&7Item listesine dön")));
         inv.setItem(49, ItemUtil.named(Material.PAPER, "&bBilgi", ItemUtil.lore(
                 "&7Kategori: " + Text.color(category.getDisplayName()),
                 "&7Arama: &f" + (query.isBlank() ? "-" : query),
                 "&7Sayfa: &f" + (page + 1)
         )));
-
-        // Filtrele
         List<Material> base = new ArrayList<>(category.getMaterials());
         base.removeIf(Objects::isNull);
 
@@ -67,14 +63,10 @@ public class SearchResultsHolder extends BaseHolder {
         int perPage = 28;
         int maxPage = results.isEmpty() ? 0 : (results.size() - 1) / perPage;
         int safePage = Math.max(0, Math.min(page, maxPage));
-
-        // Sayfalama butonları
         if (safePage > 0)
             inv.setItem(52, ItemUtil.named(Material.SPECTRAL_ARROW, "&eÖnceki", ItemUtil.lore("&7Sayfa geri")));
         if (safePage < maxPage)
             inv.setItem(53, ItemUtil.named(Material.SPECTRAL_ARROW, "&eSonraki", ItemUtil.lore("&7Sayfa ileri")));
-
-        // Boş sonuç
         if (results.isEmpty()) {
             inv.setItem(22, ItemUtil.named(Material.BARRIER, "&cSonuç bulunamadı", ItemUtil.lore(
                     "&7Şunları dene:",
@@ -85,8 +77,6 @@ public class SearchResultsHolder extends BaseHolder {
             p.openInventory(inv);
             return;
         }
-
-        // Grid
         int start = safePage * perPage;
         int end = Math.min(results.size(), start + perPage);
 

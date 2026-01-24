@@ -10,13 +10,13 @@ public class OrderLogSummary {
     public final String ownerName;
     public final Material material;
 
-    public final int totalAmount;     // CREATE'den
-    public final long unitPrice;      // CREATE'den
-    public final int deliveredAmount; // DELIVER toplamı
-    public final long deliveredPay;   // DELIVER pay toplamı
+    public final int totalAmount;
+    public final long unitPrice;
+    public final int deliveredAmount;
+    public final long deliveredPay;
 
-    public final long createdAt;      // CREATE zamanı
-    public final long lastAt;         // en son log zamanı
+    public final long createdAt;
+    public final long lastAt;
 
     public OrderLogSummary(int orderId, UUID ownerUuid, String ownerName, Material material,
                            int totalAmount, long unitPrice,

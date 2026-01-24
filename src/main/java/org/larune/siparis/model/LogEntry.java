@@ -6,20 +6,20 @@ import java.util.UUID;
 
 public class LogEntry {
     public final long id;
-    public final String type; // CREATE / DELIVER / ADMIN_DELETE / CANCEL (istersen)
+    public final String type;
     public final int orderId;
 
-    public final UUID actor;        // işlemi yapan (sipariş açan / teslim eden / admin)
+    public final UUID actor;
     public final String actorName;
 
-    public final UUID owner;        // sipariş sahibi
+    public final UUID owner;
     public final String ownerName;
 
     public final Material material;
-    public final int amount;        // create: total, deliver: delivered
-    public final long unitPrice;    // create için
-    public final long pay;          // deliver için (kazanç)
-    public final long createdAt;    // epoch ms
+    public final int amount;
+    public final long unitPrice;
+    public final long pay;
+    public final long createdAt;
 
     public LogEntry(long id, String type, int orderId,
                     UUID actor, String actorName,

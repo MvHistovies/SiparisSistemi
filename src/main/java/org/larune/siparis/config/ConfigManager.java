@@ -38,25 +38,17 @@ public class ConfigManager {
 
         boolean auto = sec.getBoolean("autoPopulate", true);
 
-        // =========================
-        // EN ÖNEMLİ DEĞİŞİKLİK:
-        // craftables yerine ALL ITEMS
-        // =========================
         Set<Material> allItems = EnumSet.noneOf(Material.class);
         for (Material m : Material.values()) {
             if (m == null) continue;
             if (m.isAir()) continue;
-            if (!m.isItem()) continue; // block/material ama item değilse alma
+            if (!m.isItem()) continue;
             allItems.add(m);
         }
-
-        // Kategori setleri: parametre olarak "allItems" veriyoruz ki craft dışı itemler de dahil olsun
         Set<Material> maden = auto ? CategoryAutoPopulator.buildMaden(allItems) : Collections.emptySet();
         Set<Material> ciftci = auto ? CategoryAutoPopulator.buildCiftci(allItems) : Collections.emptySet();
         Set<Material> mob = auto ? CategoryAutoPopulator.buildMob(allItems) : Collections.emptySet();
         Set<Material> diger = auto ? CategoryAutoPopulator.buildDiger(allItems, maden, ciftci, mob) : Collections.emptySet();
-
-        // configteki alt başlıklar: MADEN/CIFTCI/MOB/DIGER
         for (String key : sec.getKeys(false)) {
             if (key.equalsIgnoreCase("autoPopulate")) continue;
 
@@ -77,11 +69,7 @@ public class ConfigManager {
                     default -> mats.addAll(diger);
                 }
             }
-
-            // güvenlik filtresi
             mats.removeIf(m -> m == null || m.isAir() || !m.isItem());
-
-            // sıralama (isteğe bağlı ama GUI daha düzgün olur)
             mats.sort(Comparator.comparing(Enum::name));
 
             categories.add(new CategoryDef(key, displayName, icon, mats));

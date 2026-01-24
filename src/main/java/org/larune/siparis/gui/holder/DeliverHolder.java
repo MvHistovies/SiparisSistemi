@@ -10,8 +10,10 @@ import org.larune.siparis.gui.GuiManager;
 import org.larune.siparis.model.Order;
 import org.larune.siparis.service.OrderService;
 import org.larune.siparis.util.ItemUtil;
+import org.larune.siparis.util.SoundUtil;
 import org.larune.siparis.util.Text;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class DeliverHolder extends BaseHolder {
@@ -23,6 +25,10 @@ public class DeliverHolder extends BaseHolder {
         DeliverHolder holder = new DeliverHolder();
         holder.orderId = orderId;
         holder.render(gui, p);
+
+        if (gui.getPlugin().getConfig().getBoolean("sounds.enabled", true)) {
+            SoundUtil.playMenuOpen(p);
+        }
     }
 
     private void render(GuiManager gui, Player p) {
@@ -41,10 +47,18 @@ public class DeliverHolder extends BaseHolder {
         int maxDeliver = Math.min(o.remainingAmount, inInv);
         if (deliverAmount > maxDeliver) deliverAmount = Math.max(1, maxDeliver);
 
-        inv.setItem(10, ItemUtil.named(o.material, "&fSipariş #" + o.id,
-                List.of("&7Kalan: &f" + o.remainingAmount,
-                        "&7Birim: &f" + o.unitPrice + "$",
-                        "&7Envanterinde: &f" + inInv)));
+        List<String> orderLore = new ArrayList<>();
+        orderLore.add("&7Kalan: &f" + o.remainingAmount);
+        orderLore.add("&7Birim: &f" + o.unitPrice + "$");
+        orderLore.add("&7Envanterinde: &f" + inInv);
+
+        if (o.expiresAt > 0) {
+            String timeLeft = o.getFormattedRemainingTime();
+            String timeColor = o.getRemainingTime() < 3600000 ? "&c" : "&a";
+            orderLore.add("&7Kalan Süre: " + timeColor + timeLeft);
+        }
+
+        inv.setItem(10, ItemUtil.named(o.material, "&fSipariş #" + o.id, orderLore));
 
         inv.setItem(13, ItemUtil.named(Material.OAK_SIGN, "&eTeslim Miktarı: &f" + deliverAmount,
                 List.of("&7Sol: +1 | Shift+Sol: +16",
@@ -55,7 +69,9 @@ public class DeliverHolder extends BaseHolder {
         inv.setItem(16, ItemUtil.named(Material.GOLD_NUGGET, "&bKazanç: &f" + pay + "$",
                 List.of("&7Teslim miktarı x birim fiyat")));
 
-        inv.setItem(22, ItemUtil.named(Material.LIME_WOOL, "&aOnayla", List.of("&7Teslim et")));
+        inv.setItem(21, ItemUtil.named(Material.LIME_WOOL, "&aOnayla", List.of("&7Teslim et")));
+        inv.setItem(23, ItemUtil.named(Material.YELLOW_WOOL, "&eHızlı Teslim", List.of("&7Maksimum miktarı teslim et")));
+
         inv.setItem(18, ItemUtil.named(Material.ARROW, "&7Geri", List.of("&8Sipariş listesi")));
         inv.setItem(26, ItemUtil.named(Material.BARRIER, "&cKapat", List.of("&8")));
 
@@ -67,9 +83,18 @@ public class DeliverHolder extends BaseHolder {
 
         int slot = e.getRawSlot();
         ClickType ct = e.getClick();
+        boolean sounds = gui.getPlugin().getConfig().getBoolean("sounds.enabled", true);
 
-        if (slot == 18) { gui.openOrders(p, false, 0); return; }
-        if (slot == 26) { p.closeInventory(); return; }
+        if (slot == 18) {
+            if (sounds) SoundUtil.playClick(p);
+            gui.openOrders(p, false, 0);
+            return;
+        }
+        if (slot == 26) {
+            if (sounds) SoundUtil.playClick(p);
+            p.closeInventory();
+            return;
+        }
 
         if (slot == 13) {
             Order o = gui.orders().getOrder(orderId);
@@ -88,14 +113,16 @@ public class DeliverHolder extends BaseHolder {
             if (deliverAmount < 1) deliverAmount = 1;
             if (deliverAmount > Math.max(1, maxDeliver)) deliverAmount = Math.max(1, maxDeliver);
 
+            if (sounds) SoundUtil.playValueChange(p);
             render(gui, p);
             return;
         }
 
-        if (slot == 22) {
+        if (slot == 23) {
             Order o = gui.orders().getOrder(orderId);
             if (o == null) {
                 p.sendMessage(Text.msg("messages.invalid"));
+                if (sounds) SoundUtil.playError(p);
                 gui.openOrders(p, false, 0);
                 return;
             }
@@ -104,6 +131,42 @@ public class DeliverHolder extends BaseHolder {
             int maxDeliver = Math.min(o.remainingAmount, inInv);
             if (maxDeliver <= 0) {
                 p.sendMessage(Text.msg("messages.nothingToDeliver"));
+                if (sounds) SoundUtil.playError(p);
+                return;
+            }
+
+            OrderService.DeliveryResult res = gui.orders().deliver(p, orderId, maxDeliver);
+
+            if (!res.ok) {
+                if ("NO_ITEMS".equals(res.error)) p.sendMessage(Text.msg("messages.nothingToDeliver"));
+                else if ("EXPIRED".equals(res.error)) p.sendMessage(Text.msg("messages.orderExpiredCantDeliver"));
+                else p.sendMessage(Text.msg("messages.invalid"));
+                if (sounds) SoundUtil.playError(p);
+                return;
+            }
+
+            p.sendMessage(Text.msg("messages.delivered")
+                    .replace("{pay}", String.valueOf(res.pay))
+                    .replace("{amt}", String.valueOf(res.delivered)));
+
+            gui.openOrders(p, false, 0);
+            return;
+        }
+
+        if (slot == 21) {
+            Order o = gui.orders().getOrder(orderId);
+            if (o == null) {
+                p.sendMessage(Text.msg("messages.invalid"));
+                if (sounds) SoundUtil.playError(p);
+                gui.openOrders(p, false, 0);
+                return;
+            }
+
+            int inInv = ItemUtil.countInInventory(p.getInventory(), o.material);
+            int maxDeliver = Math.min(o.remainingAmount, inInv);
+            if (maxDeliver <= 0) {
+                p.sendMessage(Text.msg("messages.nothingToDeliver"));
+                if (sounds) SoundUtil.playError(p);
                 return;
             }
 
@@ -112,7 +175,9 @@ public class DeliverHolder extends BaseHolder {
 
             if (!res.ok) {
                 if ("NO_ITEMS".equals(res.error)) p.sendMessage(Text.msg("messages.nothingToDeliver"));
+                else if ("EXPIRED".equals(res.error)) p.sendMessage(Text.msg("messages.orderExpiredCantDeliver"));
                 else p.sendMessage(Text.msg("messages.invalid"));
+                if (sounds) SoundUtil.playError(p);
                 return;
             }
 

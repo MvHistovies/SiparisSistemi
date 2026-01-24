@@ -64,8 +64,6 @@ public final class ItemUtil {
         }
         return amount - need;
     }
-
-    /** Boş slot yoksa itemleri yere bırakır; true=hepsi inv'e girdi */
     public static boolean giveOrDrop(org.bukkit.entity.Player p, ItemStack stack) {
         var inv = p.getInventory();
         var left = inv.addItem(stack).values();
